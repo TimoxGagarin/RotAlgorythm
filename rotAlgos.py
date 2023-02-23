@@ -163,9 +163,9 @@ class RotAlgos:
             sheet[f"A{i + 2}"] = after_diffrence_list[i].string
 
         # intersection and fill the table
-        for i in range(len(L_list)):
+        for i in range(len(after_diffrence_list)):
             is_cover_N = True
-            for j in range(len(after_diffrence_list)):
+            for j in range(len(L_list)):
                 res = L_list[j].intersection(after_diffrence_list[i])
                 if res is not None:
                     is_cover_N = False
@@ -215,7 +215,7 @@ class RotAlgos:
 
                 for el in to_use_list[j]:
                     cell_text += f"{el}\r\n"
-                sheet[f"{num_to_chars(j + 2)}{i + 2}"] = cell_text
+                sheet[f"{num_to_chars(j + 2)}{i + 2}"] = cell_text if to_use_list[j] != set() else '-'
         workbook.save(filename="result.xlsx")
 
         # find non-covered cubes
@@ -242,7 +242,7 @@ class RotAlgos:
         for i in range(len(L_ost)):
             for j in range(len(ost)):
                 res = ost_list[j].intersection(L_ost_list[i])
-                sheet[f"{num_to_chars(j + 2)}{i + 2}"] = str(res)
+                sheet[f"{num_to_chars(j + 2)}{i + 2}"] = str(res) if res is not None else '-'
         workbook.save(filename="result.xlsx")
 
         # coming soon...
