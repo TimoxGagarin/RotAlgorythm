@@ -3,15 +3,6 @@ y = {'-1'}
 z = set()
 
 
-def find_all(str, a):
-    res = set()
-    start = 0
-    while str.find(a, start) != -1:
-        start = str.find(a, start) + 1
-        res.add(start-1)
-    return res
-
-
 class Cube:
 
     def __init__(self, string=''):
@@ -57,6 +48,14 @@ class Cube:
     def res_y(el1, el2):
         return (el1 == '1' and el2 == '0') or (el1 == '0' and el2 == '1')
 
+    def find_all(self, a):
+        res = set()
+        start = 0
+        while str(self).find(a, start) != -1:
+            start = str(self).find(a, start) + 1
+            res.add(start - 1)
+        return res
+
     def difference(self, b):
         # is diffrence void or not
         def res_void(cube):
@@ -79,14 +78,14 @@ class Cube:
             return set()
         # gets all cubes
         cubes_set = set()
-        for i in (set(range(len(self.string))) - find_all(c.string, 'z')):
+        for i in set(set(range(len(c))) - c.find_all('z')):
             cube_to_add = Cube()
 
-            for j in range(len(self.string)):
+            for j in range(len(self)):
                 if i == j and c.string[j] != 'z':
-                    cube_to_add.update(Cube.char_to_set(c.string[j]))
+                    cube_to_add.update(c.string[j])
                     continue
-                cube_to_add.update(Cube.char_to_set(self.string[j]))
+                cube_to_add.update(self.string[j])
             cubes_set.add(cube_to_add)
         return cubes_set
 

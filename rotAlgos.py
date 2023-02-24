@@ -35,27 +35,29 @@ class RotAlgos:
 
         # original coating
         self.C0 = L | N
+        # simple implicants
+        self.Z = set()
+
+        self.workbook = Workbook()
 
     def run(self):
-        workbook = Workbook()
-        sheet = workbook['Sheet']
+        sheet = self.workbook['Sheet']
 
-        Z = self.find_simple_implicants(workbook)
-        print(f"Простые импликанты: {Z}")
-        E = self.find_L_extr(Z, workbook)
+        self.Z = self.find_simple_implicants()
+        print(f"Простые импликанты: {self.Z}")
+        E = self.find_L_extr()
         print(f"L-экстремали: {E}")
         Z_res = E
 
-        ost = self.find_non_covered_cubes(E, workbook)
+        ost = self.find_non_covered_cubes(E)
         print(f"Кубы, не покрываемые L-экстремалями: {ost}")
-        L_ost = Z - E
-        print(L_ost)
+        L_ost = self.Z - E
 
         # coming soon...
-        solution = self.find_other_cubes(L_ost, ost, workbook)
+        solution = self.find_other_cubes(L_ost, ost)
 
-    def find_simple_implicants(self, workbook):
-        sheet = workbook['Sheet']
+    def find_simple_implicants(self):
+        sheet = self.workbook['Sheet']
         sheet.title = "C0 m C0"
 
         Z_res = set()
@@ -73,8 +75,12 @@ class RotAlgos:
             for i in range(0, len(C_list)):
                 sheet[f"{num_to_chars(i + 2)}1"] = C_list[i].string
                 sheet[f"A{i + 2}"] = C_list[i].string
+            sheet[f"A{len(C_list)+2}"] = f'A{k+1}'
             k += 1
 
+            A_list = list()
+            for i in range(len(C_list)):
+                A_list.append(set())
             # multi cubes in table
             for i in range(len(C_list)):
                 for j in range(i + 1):
@@ -87,8 +93,13 @@ class RotAlgos:
                     else:
                         sheet[f"{num_to_chars(j + 2)}{i + 2}"] = val.string
                         A.add(val)
+                        A_list[j].add(val)
                         Z -= {C_list[i], C_list[j]}
-
+            for i in range(len(A_list)):
+                cell_text = ''
+                for el in A_list[i]:
+                    cell_text += f"{el}\r\n"
+                sheet[f"{num_to_chars(i+2)}{len(C_list) + 2}"] = cell_text
             B = C - Z
             B_copy = copy(B)
 
@@ -100,20 +111,19 @@ class RotAlgos:
             C = A | B
             if C == set():
                 break
-            sheet = workbook.create_sheet(f"C{k} m C{k}")
-        workbook.save(filename="result.xlsx")
+            sheet = self.workbook.create_sheet(f"C{k} m C{k}")
+        self.workbook.save(filename="result.xlsx")
 
         return Z_res
 
-    def find_L_extr(self, Z, workbook):
+    def find_L_extr(self):
         # generate table grafs
-        sheet = workbook.create_sheet("z#(Z-z)")
+        sheet = self.workbook.create_sheet("z#(Z-z)")
         L_extr = set()
-
-        Z_list = list(Z)
+        Z_list = list(self.Z)
 
         sheet["A1"] = sheet.title
-        for i in range(0, len(Z)):
+        for i in range(0, len(self.Z)):
             sheet[f"{num_to_chars(i + 2)}1"] = Z_list[i].string
             sheet[f"A{i + 2}"] = Z_list[i].string
 
@@ -123,8 +133,8 @@ class RotAlgos:
             to_use_list.append({Z_list[i]})
 
         # difference and fill the table
-        for i in range(len(Z)):
-            for j in range(len(Z)):
+        for i in range(len(self.Z)):
+            for j in range(len(self.Z)):
                 res = set()
                 if i == j:
                     sheet[f"{num_to_chars(j + 2)}{i + 2}"] = '-'
@@ -140,7 +150,7 @@ class RotAlgos:
                 for el in to_use_list[j]:
                     cell_text += f"{el}\r\n"
                 sheet[f"{num_to_chars(j + 2)}{i + 2}"] = cell_text
-        workbook.save(filename="result.xlsx")
+        self.workbook.save(filename="result.xlsx")
 
         # find results of difference and potencial L-extremales
         after_diffrence = set()
@@ -149,8 +159,19 @@ class RotAlgos:
             if to_use_list[i] != set():
                 L_extr.add(Z_list[i])
 
+        if L_extr != set() and self.N == set():
+            return L_extr
+        elif L_extr == set():
+            for e in Z_list:
+                for i in range(1, len(e)):
+                    for el in Z_list:
+                        if len(el.find_all('x')) == i:
+                            self.Z.remove(el)
+                            return self.find_L_extr()
+                break
+
         # generate table grafs
-        sheet = workbook.create_sheet("L & (Z-z)")
+        sheet = self.workbook.create_sheet("L & (Z-z)")
         E = copy(L_extr)
 
         after_diffrence_list = list(after_diffrence)
@@ -184,9 +205,9 @@ class RotAlgos:
         workbook.save(filename="result.xlsx")
         return L_extr
 
-    def find_non_covered_cubes(self, E, workbook):
+    def find_non_covered_cubes(self, E):
         # generate table grafs
-        sheet = workbook.create_sheet("L # E")
+        sheet = self.workbook.create_sheet("L # E")
 
         E_list = list(E)
         L_list = list(self.L)
@@ -216,7 +237,7 @@ class RotAlgos:
                 for el in to_use_list[j]:
                     cell_text += f"{el}\r\n"
                 sheet[f"{num_to_chars(j + 2)}{i + 2}"] = cell_text if to_use_list[j] != set() else '-'
-        workbook.save(filename="result.xlsx")
+        self.workbook.save(filename="result.xlsx")
 
         # find non-covered cubes
         after_diffrence = set()
@@ -225,9 +246,9 @@ class RotAlgos:
 
         return after_diffrence
 
-    def find_other_cubes(self, L_ost, ost, workbook):
+    def find_other_cubes(self, L_ost, ost):
         # generate table grafs
-        sheet = workbook.create_sheet("L' & Z^")
+        sheet = self.workbook.create_sheet("L' & Z^")
 
         ost_list = list(ost)
         L_ost_list = list(L_ost)
@@ -238,12 +259,22 @@ class RotAlgos:
         for i in range(0, len(L_ost)):
             sheet[f"A{i + 2}"] = L_ost_list[i].string
 
+        covered_cubes_list = list()
         # intersection and fill the table
         for i in range(len(L_ost)):
+            covered_cubes_list.append(list())
             for j in range(len(ost)):
                 res = ost_list[j].intersection(L_ost_list[i])
+                if res is not None:
+                    covered_cubes_list[i].append(res)
                 sheet[f"{num_to_chars(j + 2)}{i + 2}"] = str(res) if res is not None else '-'
-        workbook.save(filename="result.xlsx")
+        self.workbook.save(filename="result.xlsx")
+        # to cover
+        print(ost_list)
+        # cover with
+        print(L_ost_list)
+        # covered by cubes
+        print(covered_cubes_list)
 
         # coming soon...
         return None
